@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+# iamenr0s.linux_hardening.logging_hardening. Local changes are overwritten.
+[Journal]
+{% for k, v in __lh_log_journald | dictsort %}
+{{ k }}={{ v }}
+{% endfor %}

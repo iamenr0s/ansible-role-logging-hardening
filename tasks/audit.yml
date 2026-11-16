@@ -1,0 +1,47 @@
+---
+- name: Build the list of drop-ins
+  ansible.builtin.include_tasks: facts.yml
+
+- name: Look at the drop-ins
+  ansible.builtin.stat:
+    path: "{{ item.dest }}"
+  loop: "{{ __lh_log_files }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: __lh_log_stats
+
+- name: Read the drop-ins
+  ansible.builtin.slurp:
+    src: "{{ item.item.dest }}"
+  loop: "{{ __lh_log_stats.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  register: __lh_log_reads
+  when: item.stat.exists
+
+- name: Compare with desired state
+  ansible.builtin.set_fact:
+    __lh_log_findings: >-
+      {%- set out = [] -%}
+      {%- for f in __lh_log_stats.results -%}
+      {%- set rd = __lh_log_reads.results[loop.index0] -%}
+      {%- if not f.stat.exists or (rd.content | b64decode) != f.item.content or f.stat.mode != '0644' -%}
+      {%- set _ = out.append({'key': f.item.name ~ ' drop-in ' ~ f.item.dest, 'expected': 'present with the desired settings', 'actual': 'missing or different', 'fixable': true}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out | to_json }}
+
+- name: Record findings
+  ansible.builtin.set_fact:
+    linux_hardening_logging_findings: "{{ __lh_log_findings | from_json }}"
+
+- name: Report logging_hardening result
+  ansible.builtin.debug:
+    msg: "{{ 'COMPLIANT' if linux_hardening_logging_findings | length == 0 else linux_hardening_logging_findings }}"
+
+- name: Fail on findings
+  ansible.builtin.fail:
+    msg: "logging_hardening found {{ linux_hardening_logging_findings | length }} deviation(s)."
+  when:
+    - linux_hardening_logging_findings | length > 0
+    - (linux_hardening_fail_on_error | bool) or (__lh_log_audit_fatal | default(false))

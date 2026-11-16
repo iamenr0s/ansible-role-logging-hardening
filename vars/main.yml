@@ -1,0 +1,5 @@
+---
+# Persistent storage keeps logs across reboots (uses disk: cap it with SystemMaxUse).
+__linux_hardening_logging_journald_base:
+  Storage: persistent
+  Compress: "yes"

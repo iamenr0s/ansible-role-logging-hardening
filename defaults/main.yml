@@ -1,0 +1,18 @@
+---
+# --- Shared collection variables ---
+linux_hardening_mode: audit                    # audit (read-only) | remediate
+linux_hardening_confirm_remediation: false     # must be true for any change
+linux_hardening_backup: true
+linux_hardening_verify: true
+linux_hardening_fail_on_error: true
+
+# --- logging_hardening (journald and rsyslog settings) ---
+linux_hardening_logging_enabled: true
+linux_hardening_logging_journald_dropin: /etc/systemd/journald.conf.d/99-linux-hardening.conf
+linux_hardening_logging_rsyslog_dropin: /etc/rsyslog.d/99-linux-hardening.conf
+
+# Change or add [Journal] settings: {Key: value}. null removes a built-in setting
+# (e.g. {SystemMaxUse: 2G} to cap disk use, {Storage: null} to leave it unmanaged).
+linux_hardening_logging_journald: {}
+# Mode for log files rsyslog creates. Only written when rsyslog is installed (/etc/rsyslog.conf exists).
+linux_hardening_logging_rsyslog_file_mode: "0640"

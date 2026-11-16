@@ -1,0 +1,13 @@
+---
+# Make the rsyslog branch run: the images may not ship rsyslog.
+- name: Prepare (fake rsyslog install)
+  hosts: all
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Create /etc/rsyslog.conf
+      ansible.builtin.copy:
+        content: "# stub\n"
+        dest: /etc/rsyslog.conf
+        mode: "0644"
+        force: false

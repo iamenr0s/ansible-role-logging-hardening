@@ -1,0 +1,37 @@
+---
+- name: Verify
+  hosts: all
+  become: false
+  gather_facts: true
+  tasks:
+    - name: Audit again
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir }}/../.."  # noqa: role-name[path]
+      vars:
+        linux_hardening_mode: audit
+        linux_hardening_logging_journald: {SystemMaxUse: 2G, Compress: null}
+
+    - name: Read the drop-ins
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      loop: [/etc/systemd/journald.conf.d/99-linux-hardening.conf, /etc/rsyslog.d/99-linux-hardening.conf]
+      register: __f
+
+    - name: Assert content
+      ansible.builtin.assert:
+        that:
+          - "'Storage=persistent' in (__f.results[0].content | b64decode)"
+          - "'SystemMaxUse=2G' in (__f.results[0].content | b64decode)"
+          - "'Compress' not in (__f.results[0].content | b64decode)"
+          - "'$FileCreateMode 0640' in (__f.results[1].content | b64decode)"
+        quiet: true
+
+    - name: Query journald
+      ansible.builtin.systemd:
+        name: systemd-journald
+      register: __j
+
+    - name: Journald is still running
+      ansible.builtin.assert:
+        that: __j.status.ActiveState == 'active'
+        quiet: true
