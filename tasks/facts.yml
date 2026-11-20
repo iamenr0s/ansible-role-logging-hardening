@@ -1,17 +1,17 @@
 ---
 # Read-only. Sets __lh_log_files: [{name, dest, src, content}] for the drop-ins that apply on this host.
-- name: Check whether rsyslog is installed
+- name: facts | Check whether rsyslog is installed
   ansible.builtin.stat:
     path: /etc/rsyslog.conf
   register: __lh_log_rsyslog
 
-- name: Build the journald settings
+- name: facts | Build the journald settings
   ansible.builtin.set_fact:
     __lh_log_journald: >-
       {{ __linux_hardening_logging_journald_base | combine(linux_hardening_logging_journald)
          | dict2items | rejectattr('value', 'none') | items2dict }}
 
-- name: Build the list of drop-ins
+- name: facts | Build the list of drop-ins
   ansible.builtin.set_fact:
     __lh_log_files: >-
       {{ [{'name': 'journald', 'dest': linux_hardening_logging_journald_dropin, 'src': 'journald.conf.j2',
