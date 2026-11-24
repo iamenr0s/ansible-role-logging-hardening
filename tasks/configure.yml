@@ -1,8 +1,8 @@
 ---
-- name: Build the list of drop-ins
+- name: configure | Build the list of drop-ins
   ansible.builtin.include_tasks: facts.yml
 
-- name: Ensure the drop-in directories exist
+- name: configure | Ensure the drop-in directories exist
   ansible.builtin.file:
     path: "{{ item.dest | dirname }}"
     state: directory
@@ -13,7 +13,7 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: Write the drop-ins
+- name: configure | Write the drop-ins
   ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -26,18 +26,18 @@
     label: "{{ item.name }}"
   register: __lh_log_written
 
-- name: Restart journald when its drop-in changed
+- name: configure | Restart journald when its drop-in changed
   ansible.builtin.systemd:
     name: systemd-journald
     state: restarted
   when: __lh_log_written.results | selectattr('item.name', 'eq', 'journald') | selectattr('changed') | list | length > 0
 
-- name: Gather service state
+- name: configure | Gather service state
   ansible.builtin.service_facts:
   when: __lh_log_written.results | selectattr('item.name', 'eq', 'rsyslog') | selectattr('changed') | list | length > 0
 
 # Only a running rsyslog is restarted; an installed but stopped one picks the drop-in up when it starts.
-- name: Restart rsyslog when its drop-in changed
+- name: configure | Restart rsyslog when its drop-in changed
   ansible.builtin.systemd:
     name: rsyslog
     state: restarted

@@ -1,4 +1,4 @@
-[![Molecule](https://github.com/iamenr0s/ansible-role-logging-hardening/actions/workflows/molecule.yml/badge.svg)](https://github.com/iamenr0s/ansible-role-logging-hardening/actions/workflows/molecule.yml) ![Ansible Role](https://img.shields.io/ansible/role/d/iamenr0s/ansible_role_logging_hardening) [![CodeFactor](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-logging-hardening/badge)](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-logging-hardening)
+[![Molecule](https://github.com/iamenr0s/ansible-role-logging-hardening/actions/workflows/molecule.yml/badge.svg)](https://github.com/iamenr0s/ansible-role-logging-hardening/actions/workflows/molecule.yml) ![Ansible Role](https://img.shields.io/ansible/role/d/iamenr0s/logging_hardening) [![CodeFactor](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-logging-hardening/badge)](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-logging-hardening)
 
 # Ansible Role: Logging Hardening
 
@@ -22,11 +22,31 @@ Add or change journald settings with `linux_hardening_logging_journald` (e.g. `{
 - `Storage=persistent` uses disk under `/var/log/journal`; cap it with `SystemMaxUse` on small disks.
 - `$FileCreateMode` affects only files rsyslog creates later; existing log files keep their mode (see `filesystem_hardening` for system files).
 
+## Role Variables
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `linux_hardening_mode` | str | `audit` | audit is read-only. Choices: `audit`, `remediate`. |
+| `linux_hardening_confirm_remediation` | bool | `false` | Must be true before remediate changes anything. |
+| `linux_hardening_backup` | bool | `true` | Back up a drop-in when it changes. |
+| `linux_hardening_verify` | bool | `true` | Re-audit after remediation. |
+| `linux_hardening_fail_on_error` | bool | `true` | Fail the play when audit finds deviations. |
+| `linux_hardening_logging_enabled` | bool | `true` | Run the role. |
+| `linux_hardening_logging_journald_dropin` | path | `/etc/systemd/journald.conf.d/99-linux-hardening.conf` | journald drop-in. |
+| `linux_hardening_logging_rsyslog_dropin` | path | `/etc/rsyslog.d/99-linux-hardening.conf` | rsyslog drop-in. |
+| `linux_hardening_logging_journald` | dict | `{}` | [Journal] settings to add or change; null drops a built-in one. |
+| `linux_hardening_logging_rsyslog_file_mode` | str | `0640` | rsyslog $FileCreateMode. |
+
+**Check mode:** `remediate` with `--check --diff` shows what would change without writing anything; the post-remediation re-audit is skipped in check mode.
+
+**Idempotent:** yes. A second `remediate` run reports no changes (the Molecule `idempotence` step checks this).
+
 ## Example
 ```yaml
 - hosts: all
+  become: true
   roles:
-    - role: iamenr0s.linux_hardening.logging_hardening
+    - role: iamenr0s.logging_hardening
       vars:
         linux_hardening_mode: remediate
         linux_hardening_confirm_remediation: true
